@@ -16,8 +16,7 @@ This plugin enables serial communication over Bluetooth. It is a fork of https:/
  * The phone must initiate the Bluetooth connection
  * Will *not* connect Android to Android (https://github.com/don/BluetoothSerial/issues/50#issuecomment-66405396)
  * Will *not* connect iOS to iOS
- * Android Target SDK must be 22 or less.  New Permission model for SDK 23 (Android 6.0) not yet implemented
- * Does not connect to multiple devices, however with 0.9.5 and above multiple interfaces (serial ports) on the same device are supported.
+  * Does not connect to multiple devices, however with 0.9.5 and above multiple interfaces (serial ports) on the same device are supported.
 
 # Installing
 
