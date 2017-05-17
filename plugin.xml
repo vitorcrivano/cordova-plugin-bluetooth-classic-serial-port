@@ -1,67 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<plugin
-    xmlns="http://www.phonegap.com/ns/plugins/1.0"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    id="cordova-plugin-bluetoothClassic-serial"
-    version="0.9.9">
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android" id="cordova-plugin-bluetoothClassic-serial" version="0.9.9">
 
-    <name>Bluetooth Classic Serial</name>
-    <description>Bluetooth Serial Communication Plugin</description>
-    <license>Apache 2.0</license>
-    <keywords>bluetooth, serial, classic, MFi, arduino</keywords>
-    <repo>https://github.com/soltius/BluetoothClassicSerial.git</repo>
-    <issue>https://github.com/soltius/BluetoothClassicSerial/issues</issue>
+  <name>Bluetooth Classic Serial</name>
+  <description>Bluetooth Serial Communication Plugin</description>
+  <license>Apache 2.0</license>
+  <keywords>bluetooth, serial, classic, MFi, arduino</keywords>
+  <repo>https://github.com/soltius/BluetoothClassicSerial.git</repo>
+  <issue>https://github.com/soltius/BluetoothClassicSerial/issues</issue>
 
-    <js-module src="www/bluetoothClassicSerial.js" name="bluetoothClassicSerial">
-        <clobbers target="window.bluetoothClassicSerial" />
+  <js-module src="www/bluetoothClassicSerial.js" name="bluetoothClassicSerial">
+    <clobbers target="window.bluetoothClassicSerial"/>
+  </js-module>
+
+  <platform name="android">
+
+    <config-file target="res/xml/config.xml" parent="/widget">
+      <feature name="BluetoothClassicSerial">
+        <param name="android-package" value="nz.co.soltius.cordova.BluetoothClassicSerial"/>
+      </feature>
+    </config-file>
+
+    <source-file src="src/android/nz/co/soltius/cordova/BluetoothClassicSerial.java" target-dir="src/nz/co/soltius/cordova"/>
+    <source-file src="src/android/nz/co/soltius/cordova/BluetoothClassicSerialService.java" target-dir="src/nz/co/soltius/cordova"/>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+      <uses-permission android:name="android.permission.BLUETOOTH"/>
+      <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    </config-file>
+
+  </platform>
+
+  <platform name="ios">
+
+    <dependency id="cordova-custom-config"/>
+
+    <config-file target="config.xml" parent="/widget">
+      <feature name="BluetoothClassicSerial">
+        <param name="ios-package" value="BluetoothClassicSerial" onload="true"/>
+      </feature>
+    </config-file>
+
+    <header-file src="src/ios/BluetoothClassicSerial.h" target-dir="BluetoothClassicSerial"/>
+    <source-file src="src/ios/BluetoothClassicSerial.m" target-dir="BluetoothClassicSerial"/>
+    <header-file src="src/ios/CommunicationSession.h" target-dir="CommunicationSession"/>
+    <source-file src="src/ios/CommunicationSession.m" target-dir="CommunicationSession"/>
+
+    <!-- frameworks -->
+    <framework src="CoreBluetooth.framework"/>
+    <framework src="ExternalAccessory.framework"/>
+
+  </platform>
+
+  <platform name="browser">
+    <js-module src="src/browser/BluetoothClassicSerial.js" name="BluetoothSerial_browser">
+      <clobbers target="window.bluetoothClassicSerial"/>
     </js-module>
 
-    <dependency id="cordova-custom-config" version="2.0.3" />
-
-    <platform name="android">
-
-        <config-file target="res/xml/config.xml" parent="/widget">
-            <feature name="BluetoothClassicSerial">
-                <param name="android-package" value="nz.co.soltius.cordova.BluetoothClassicSerial"/>
-            </feature>
-        </config-file>
-
-        <source-file src="src/android/nz/co/soltius/cordova/BluetoothClassicSerial.java"
-            target-dir="src/nz/co/soltius/cordova"/>
-        <source-file src="src/android/nz/co/soltius/cordova/BluetoothClassicSerialService.java"
-            target-dir="src/nz/co/soltius/cordova"/>
-
-        <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.BLUETOOTH" />
-            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-        </config-file>
-
-    </platform>
-
-    <platform name="ios">
-
-        <config-file target="config.xml" parent="/widget">
-            <feature name="BluetoothClassicSerial">
-                <param name="ios-package" value="BluetoothClassicSerial" onload="true"/>
-            </feature>
-        </config-file>
-
-        <header-file src="src/ios/BluetoothClassicSerial.h" target-dir="BluetoothClassicSerial" />
-        <source-file src="src/ios/BluetoothClassicSerial.m" target-dir="BluetoothClassicSerial" />
-        <header-file src="src/ios/CommunicationSession.h" target-dir="CommunicationSession" />
-        <source-file src="src/ios/CommunicationSession.m" target-dir="CommunicationSession" />
-
-        <!-- frameworks -->
-        <framework src="CoreBluetooth.framework" />
-        <framework src="ExternalAccessory.framework" />
-
-    </platform>
-
-    <platform name="browser">
-        <js-module src="src/browser/BluetoothClassicSerial.js" name="BluetoothSerial_browser">
-            <clobbers target="window.bluetoothClassicSerial" />
-        </js-module>
-
-    </platform>
+  </platform>
 </plugin>
