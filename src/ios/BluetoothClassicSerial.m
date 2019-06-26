@@ -238,9 +238,10 @@
 - (void)connect:(CDVInvokedUrlCommand *)command {
 
     // If we have any existing communication sessions, make sure they're closed.
-    if ([self.communicationSessions count] > 0) {
-        [self closeCommunicationSessions];
-    }
+    // TODO close communication for the given interface
+    // if ([self.communicationSessions count] > 0) {
+    //     [self closeCommunicationSessions];
+    // }
 
     CDVPluginResult *pluginResult = nil;
     bool inError = false;

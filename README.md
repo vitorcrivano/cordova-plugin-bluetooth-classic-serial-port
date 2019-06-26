@@ -16,14 +16,12 @@ This plugin enables serial communication over Bluetooth. It is a fork of https:/
  * The phone must initiate the Bluetooth connection
  * Will *not* connect Android to Android (https://github.com/don/BluetoothSerial/issues/50#issuecomment-66405396)
  * Will *not* connect iOS to iOS
- * Android Target SDK must be 22 or less.  New Permission model for SDK 23 (Android 6.0) not yet implemented
- * Does not connect to multiple devices, however with 0.9.5 and above multiple interfaces (serial ports) on the same device are supported.
 
 # Installing
 
 Install with Cordova cli
 
-    $ cordova plugin add cordova-plugin-bluetoothClassic-serial
+    $ cordova plugin add https://github.com/agriwebb/BluetoothClassicSerial.git
 
 Note that this plugin's id changed from 'cordova-plugin-bluetooth-serial' to 'cordova-plugin-bluetoothClassic-serial' as part of the fork.
 
@@ -284,7 +282,7 @@ Function `subscribe` registers a callback that is called when data is received. 
 ### Quick Example
 ```
 // the success callback is called whenever data is received
-bluetoothClassicSerial.subscribe("00001101-0000-1000-8000-00805F9B34FB", '\n', function (data) {
+bluetoothClassicSerial.subscribe("00:AA:DD:DD:1A:2D", '\n', function (data) {
     console.log(data);
 }, failure);
 ```
