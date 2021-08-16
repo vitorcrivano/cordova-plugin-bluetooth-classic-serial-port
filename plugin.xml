@@ -15,9 +15,7 @@
     <js-module src="www/bluetoothClassicSerial.js" name="bluetoothClassicSerial">
         <clobbers target="window.bluetoothClassicSerial" />
     </js-module>
-
-    <dependency id="cordova-custom-config" version="2.0.3" />
-
+    
     <platform name="android">
 
         <config-file target="res/xml/config.xml" parent="/widget">
