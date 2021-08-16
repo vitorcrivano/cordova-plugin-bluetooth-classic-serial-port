@@ -35,8 +35,8 @@ module.exports = {
         cordova.exec(success, failure, "BluetoothClassicSerial", "isEnabled", []);
     },
 
-    isConnected: function (success, failure) {
-        cordova.exec(success, failure, "BluetoothClassicSerial", "isConnected", []);
+    isConnected: function (interfaceId, success, failure) {
+        cordova.exec(success, failure, "BluetoothClassicSerial", "isConnected", [interfaceId]);
     },
 
     // the number of bytes of data available to read is passed to the success function
