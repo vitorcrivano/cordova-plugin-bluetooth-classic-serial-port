@@ -1,5 +1,7 @@
 package nz.co.soltius.cordova;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -83,6 +85,11 @@ public class BluetoothClassicSerial extends CordovaPlugin {
     //StringBuffer buffer = new StringBuffer();
     //private String delimiter;
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
+
+    // Android 23 requires user to explicitly grant permission for location to discover unpaired
+    private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int CHECK_PERMISSIONS_REQ_CODE = 2;
+    private CallbackContext permissionCallback;
 
     //Container for interfaces (Index = interfaceID)
     private HashMap<String, InterfaceContext> connections = new HashMap<String, InterfaceContext>();
@@ -261,7 +268,13 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
             } else if (action.equals(DISCOVER_UNPAIRED)) {
 
+              //Check for Coarse Location
+              if (cordova.hasPermission(ACCESS_COARSE_LOCATION)) {
                 discoverUnpairedDevices(callbackContext);
+              } else {
+                permissionCallback = callbackContext;
+                cordova.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
+              }
 
             } else if (action.equals(SET_DEVICE_DISCOVERED_LISTENER)) {
 
@@ -446,7 +459,6 @@ public class BluetoothClassicSerial extends CordovaPlugin {
             return data;
 
         }
-
         private void sendDataToSubscriber() {
 
             String data = readUntil(delimiter);
@@ -713,4 +725,28 @@ public class BluetoothClassicSerial extends CordovaPlugin {
             callbackContext.error("Not connected.");
         }
     }
+
+      @Override
+      public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+
+        for(int result:grantResults) {
+          if(result == PackageManager.PERMISSION_DENIED) {
+            LOG.d(TAG, "User *rejected* location permission");
+            this.permissionCallback.sendPluginResult(new PluginResult(
+              PluginResult.Status.ERROR,
+              "Location permission is required to discover unpaired devices.")
+             );
+             return;
+           }
+         }
+
+          switch(requestCode) {
+            case CHECK_PERMISSIONS_REQ_CODE:
+              LOG.d(TAG, "User granted location permission");
+              discoverUnpairedDevices(permissionCallback);
+              break;
+          }
+
+        }
+
 }
