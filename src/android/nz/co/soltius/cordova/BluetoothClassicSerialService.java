@@ -196,7 +196,7 @@ public class BluetoothClassicSerialService {
      */
     private void connectionFailed() {
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(BluetoothClassicSerial.MESSAGE_TOAST);
+        Message msg = mHandler.obtainMessage(BluetoothClassicSerial.MESSAGE_FAILED);
         Bundle bundle = new Bundle();
         bundle.putString(BluetoothClassicSerial.TOAST, "Unable to connect to device");
         msg.setData(bundle);
