@@ -90,6 +90,7 @@
 @property (nonatomic, strong) NSMutableData *readBuffer;
 @property (nonatomic, strong) NSMutableData *writeBuffer;
 @property (nonatomic) uint8_t inputBufferSize;
+@property (nonatomic, strong) NSString *connectCallbackId;
 @property (nonatomic, strong) NSString *subscribeCallbackId;
 @property (nonatomic, strong) NSString *readDelimiter;
 @property (nonatomic, strong) NSString *subscribeRawDataCallbackID;

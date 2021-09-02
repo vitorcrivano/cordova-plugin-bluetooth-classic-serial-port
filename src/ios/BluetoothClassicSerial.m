@@ -5,12 +5,8 @@
 - (void)pluginInitialize {
 
     // Initialise properties
-    self.accessory = nil;
-    self.SessionDataReceivedNotification = @"SessionDataReceivedNotification";
     self.deviceDiscoveredCallbackID = nil;
     self.sessionDataReadCallbackID = nil;
-    self.connectionErrorDetails = nil;
-    self.connectionError = nil;
 
     // Initialise base bluetooth settings
     self.bluetoothEnabled = false;
@@ -146,7 +142,6 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 
-
 }
 
 - (void)clear:(CDVInvokedUrlCommand *)command {
@@ -187,13 +182,16 @@
 
 - (void)isConnected:(CDVInvokedUrlCommand*)command {
 
-    CDVPluginResult *pluginResult = nil;
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsBool:false];
+    NSString *protocolString = [command.arguments objectAtIndex:0];
 
-    // If we've got an accessory check if we're connected with all protocols
-    if ([self isAllCommunicationSessionsOpen]) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
-    } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsBool:false];
+    if(protocolString != nil) {
+        CommunicationSession *session = [self getCommunicationSessionForProtocolString:protocolString];
+        EAAccessory *connectionSessionAccessory = [session accessory];
+
+        if (session != nil && [connectionSessionAccessory isConnected]) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
+        }
     }
 
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -203,14 +201,21 @@
 
 - (void)disconnect:(CDVInvokedUrlCommand *)command {
 
-    // Close the session with the device
-    [self closeCommunicationSessions];
-
+    NSArray *protocolStrings = [command.arguments objectAtIndex:0];
     CDVPluginResult *pluginResult = nil;
 
-    if (![self isAllCommunicationSessionsOpen]) {
+    @try {
+        // Close the session with the device
+        if(protocolStrings == nil) {
+            [self closeCommunicationSessions];
+        } else{
+            [self closeCommunicationSession:protocolStrings];
+        }
+
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
-    } else {
+
+    }
+    @catch (NSException *e) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsBool:false];
     }
 
@@ -218,30 +223,8 @@
 
 }
 
-- (bool)isAllCommunicationSessionsOpen {
-
-    if ([self.communicationSessions count] == 0) {
-        return false;
-    }
-
-    for (CommunicationSession *session in self.communicationSessions) {
-
-        if (!session.isOpen) {
-            return false;
-        }
-
-    }
-    return true;
-}
-
 
 - (void)connect:(CDVInvokedUrlCommand *)command {
-
-    // If we have any existing communication sessions, make sure they're closed.
-    // TODO close communication for the given interface
-    // if ([self.communicationSessions count] > 0) {
-    //     [self closeCommunicationSessions];
-    // }
 
     CDVPluginResult *pluginResult = nil;
     bool inError = false;
@@ -254,7 +237,7 @@
     if ([command.arguments objectAtIndex:0] != (id)[NSNull null]) {
         @try {
             connectionId = (NSUInteger)[[command.arguments objectAtIndex:0] integerValue];
-            connectionResult = [self openSessionForConnectionIdAndProtocolStrings:connectionId:protocolStrings];
+            connectionResult = [self openSessionForConnectionIdAndProtocolStrings:command];
 
             NSNumber *status = connectionResult[@"status"];
             if (![status boolValue]) {
@@ -280,7 +263,7 @@
     if (inError) {
 
         // If we're in error just make sure to close any communications sessions that might have opened
-        [self  closeCommunicationSessions];
+        [self closeCommunicationSession:protocolStrings];
 
         if (connectionId > 0) {
             [connectionResult setValue:[NSNumber numberWithLong:connectionId] forKeyPath:@"id"];
@@ -289,9 +272,10 @@
         [connectionError insertObject:connectionResult atIndex:0];
 
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsArray:connectionError];
+
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
-
+        [pluginResult setKeepCallbackAsBool:true];
     }
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 
@@ -330,16 +314,27 @@
 
             // If the device was already connected send back the currently selected accessory.
             if (error != nil && [error code] == EABluetoothAccessoryPickerAlreadyConnected) {
-                if (self.accessory != nil && [self.accessory isConnected]) {
-                    NSMutableArray *dictArray = [[NSMutableArray alloc] init];
-                    [dictArray insertObject:[self accessoryDetails:self.accessory] atIndex:0];
-                    NSArray *accessoryDetailsArray = [NSArray arrayWithArray:dictArray];
-                    CDVPluginResult *pluginResult = nil;
-                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:accessoryDetailsArray];
-                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-                } else {
-                    sendBackList = true;
+
+                EAAccessory *accessory;
+
+
+                for (NSString *protocolString in accessory.protocolStrings ){
+                    CommunicationSession *session = [self getCommunicationSessionForProtocolString:protocolString];
+                    EAAccessory *connectionSessionAccessory = [session accessory];
+
+                    if (session != nil && [connectionSessionAccessory isConnected]) {
+                        NSMutableArray *dictArray = [[NSMutableArray alloc] init];
+                        [dictArray insertObject:accessory atIndex:0];
+                        NSArray *accessoryDetailsArray = [NSArray arrayWithArray:dictArray];
+                        CDVPluginResult *pluginResult = nil;
+                        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:accessoryDetailsArray];
+                        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                        break;
+                    } else {
+                        sendBackList = true;
+                    }
                 }
+
             }
 
             if (sendBackList) {
@@ -454,7 +449,25 @@
 
 }
 
-- (NSMutableDictionary*)openSessionForConnectionIdAndProtocolStrings:(NSUInteger)connectionId :(NSArray *)protocolStrings {
+- (void)closeCommunicationSession:(NSArray *)protocolStrings {
+
+    for (NSString *protocolString in protocolStrings) {
+        for (int i=0; i<[self.communicationSessions  count]; i++) {
+            CommunicationSession *session = [self.communicationSessions  objectAtIndex:i];
+            if ([session.protocolString isEqualToString:protocolString]) {
+                [session close];
+                [self.communicationSessions removeObject:session];
+                i--;
+            }
+        }
+    }
+
+}
+
+- (NSMutableDictionary*)openSessionForConnectionIdAndProtocolStrings:(CDVInvokedUrlCommand *)command {
+
+    NSUInteger connectionId = (NSUInteger)[[command.arguments objectAtIndex:0] integerValue];
+    NSArray *protocolStrings = [command.arguments objectAtIndex:1];
 
     NSMutableDictionary *openSessionResult = [[NSMutableDictionary alloc] init];
 
@@ -482,13 +495,11 @@
     // If we have an accessory then open up a communication session with the accessory for any protocols supplied
     if (accessory != nil) {
 
-        // Set the accessory against the plugin
-        self.accessory = accessory;
-
         [accessory setDelegate:self];
         bool allSessionsOpened = true;
         for (NSString *protocolString in protocolStrings) {
             CommunicationSession *session = [[CommunicationSession alloc] init:accessory:protocolString:self.commandDelegate];
+            session.connectCallbackId = command.callbackId;
             if ([session open]) {
                 [self.communicationSessions addObject:session];
             } else {
@@ -498,7 +509,7 @@
         }
 
         if (!allSessionsOpened) {
-            [self closeCommunicationSessions];
+            [self closeCommunicationSession:accessory.protocolStrings];
             [openSessionResult setValue:@"Could not open a communication session for all the protocols supplied." forKey:@"error"];
             [openSessionResult setObject:[NSNumber numberWithBool:FALSE] forKey:@"status"];
 
@@ -559,15 +570,17 @@
 
 - (void)accessoryConnected:(NSNotification *)notification {
 
-    // If we don't already have an accessory or if we have an accessory but it's not connected
-    if (self.accessory == nil || ![self.accessory isConnected]) {
+    EAAccessory *accessory = [[notification userInfo] objectForKey:EAAccessoryKey];
 
-        // Get the freshly connected accessory and set the connection ID
-        self.accessory = [[notification userInfo] objectForKey:EAAccessoryKey];
+    for (NSString *protocolString in accessory.protocolStrings ){
+        CommunicationSession *session = [self getCommunicationSessionForProtocolString:protocolString];
+        EAAccessory *connectionSessionAccessory = [session accessory];
 
-        // If there's a device discovered listener then send back the device details
-        if (self.deviceDiscoveredCallbackID != nil) {
-            [self fireDeviceDiscoveredListener:self.accessory];
+        if (session == nil || ![connectionSessionAccessory isConnected]) {
+            // If there's a device discovered listener then send back the device details
+            if (self.deviceDiscoveredCallbackID != nil) {
+                [self fireDeviceDiscoveredListener:accessory];
+            }
         }
 
     }
@@ -577,22 +590,20 @@
 - (void)addSubscribeCallbacksToCommunicationSessions {
 
     for (NSMutableDictionary *callback in self.subscribeCallbackIds) {
-
         for (CommunicationSession *session in self.communicationSessions) {
             if ([session.protocolString isEqualToString:callback[@"protocolString"]]) {
                 session.readDelimiter = callback[@"delimiter"];
                 [session addSubscribeCallbackAndObserver:callback[@"id"]];
             }
         }
-
     }
+
     for (NSMutableDictionary *callback in self.subscribeRawCallbackIds) {
         for (CommunicationSession *session in self.communicationSessions) {
             if ([session.protocolString isEqualToString:callback[@"protocolString"]]) {
                 [session subscribeRaw:callback[@"id"]];
             }
         }
-
     }
 
 }
@@ -606,7 +617,6 @@
 }
 
 - (void)unsubscribeCommunicationSessionFromRawData: (NSString *)protocolString {
-
     for (CommunicationSession *session in self.communicationSessions) {
         if ([session.protocolString isEqualToString:protocolString]) {
             [session unsubscribeRaw];
@@ -626,7 +636,21 @@
 }
 
 - (void)accessoryDisconnected:(NSNotification *)notification {
-    [self closeCommunicationSessions];
+
+    EAAccessory *accessory = [[notification userInfo] objectForKey:EAAccessoryKey];
+
+    for (NSString *protocolString in accessory.protocolStrings ){
+        CommunicationSession *session = [self getCommunicationSessionForProtocolString:protocolString];
+        if (session != nil && [session connectCallbackId] != nil) {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Device connection was lost"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:[session connectCallbackId]];
+        }
+    }
+
+    [self closeCommunicationSession:accessory.protocolStrings];
+
 }
+
+
 
 @end

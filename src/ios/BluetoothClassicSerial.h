@@ -207,7 +207,7 @@
  @discussion If the connectionID is passed in as 0 then the method will attempt to open a session with the first connected device that matches the provided communication protocol.
  @return NSMutableDictionary - True for session open. False for not
  */
-- (NSMutableDictionary*)openSessionForConnectionIdAndProtocolStrings:(NSUInteger)connectionId :(NSArray *)protocolStrings;
+- (NSMutableDictionary*)openSessionForConnectionIdAndProtocolStrings:(CDVInvokedUrlCommand *)command;
 
 /*!
  @brief Get all the details for a given accessory
@@ -238,10 +238,6 @@
  */
 - (void)accessoryDisconnected:(NSNotification *)notification;
 
-/*!
- @brief Determines whether all not all communication sessions are open on the device.
- */
-- (bool)isAllCommunicationSessionsOpen;
 
 /*!
  @brief Get the active communication session for a particular protocol string.
@@ -249,14 +245,10 @@
 - (CommunicationSession*)getCommunicationSessionForProtocolString: (NSString *)protocolString;
 
 
-@property (nonatomic, strong) EAAccessory *accessory;
 @property (nonatomic, strong) NSString *deviceDiscoveredCallbackID;
 @property (nonatomic, strong) NSString *sessionDataReadCallbackID;
 @property CBCentralManager* bluetoothManager;
 @property (nonatomic) bool bluetoothEnabled;
-@property (nonatomic, strong) NSMutableArray *connectionError;
-@property (nonatomic, strong) NSMutableDictionary *connectionErrorDetails;
-@property (nonatomic, strong) NSString *SessionDataReceivedNotification;
 @property (nonatomic, strong) NSMutableArray *communicationSessions;
 @property (nonatomic, strong) NSMutableArray *subscribeCallbackIds;
 @property (nonatomic, strong) NSMutableArray *subscribeRawCallbackIds;

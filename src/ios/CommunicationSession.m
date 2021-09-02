@@ -12,6 +12,7 @@
         self.commandDelegate = commandDelegate;
 
         // Initialize properties
+        self.connectCallbackId = nil;
         self.writeBuffer = nil;
         self.readBuffer = nil;
         self.subscribeCallbackId = nil;
