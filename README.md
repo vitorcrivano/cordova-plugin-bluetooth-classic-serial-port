@@ -1,9 +1,13 @@
 # Bluetooth Classic Serial Plugin for Cordova
 
-This plugin enables serial communication over Bluetooth. It is a fork of https://github.com/don/BluetoothSerial.  The core difference is that https://github.com/don/BluetoothSerial supports Bluetooth Low Energy on iOS.  This plugin is written using the iOS Accessory Framework (MFi) to support Classic Bluetooth on iOS.  Windows Phone 8 Support has been removed in the fork.
+This plugin enables serial communication over Bluetooth. It is a fork of https://github.com/don/BluetoothSerial and https://github.com/soltius/BluetoothClassicSerial The core difference is that https://github.com/don/BluetoothSerial supports Bluetooth Low Energy on iOS. This plugin is written using the iOS Accessory Framework (MFi) to support Classic Bluetooth on iOS. Windows Phone 8 Support has been removed in the fork.
 
 * **Beta Release**
 * **Breaking API Changes from version 0.9.5 'MultiInterface'**
+
+## TODO
+
+- Check and fix documentation
 
 ## Supported Platforms
 
@@ -21,9 +25,25 @@ This plugin enables serial communication over Bluetooth. It is a fork of https:/
 
 Install with Cordova cli
 
-    $ cordova plugin add https://github.com/agriwebb/BluetoothClassicSerial.git
+    $ cordova plugin add cordova-plugin-bluetooth-classic-serial-port
+    $ cordova plugin add https://github.com/MaximBelov/cordova-plugin-bluetooth-classic-serial-port.git
 
-Note that this plugin's id changed from 'cordova-plugin-bluetooth-serial' to 'cordova-plugin-bluetoothClassic-serial' as part of the fork.
+
+Install with Ionic
+
+    $ ionic cordova plugin add cordova-plugin-bluetooth-classic-serial-port
+
+Note that this plugin's id changed from 'cordova-plugin-bluetooth-serial' to 'cordova-plugin-bluetooth-classic-serial-port' as part of the fork.
+
+## Ionic Native
+
+### Dev version
+
+    $ npm i ionic-native-bluetooth-classic-serial-port
+
+### Prod version
+
+    $ npm i @ionic-native/bluetooth-classic-serial-port
 
 ## iOS Notes
 
@@ -94,7 +114,8 @@ Connect to a Bluetooth device.
 
 ### Description
 
-Function `connect` connects to a Bluetooth device.  The callback is long running.  Success will be called when the connection is successful.  Failure is called if the connection fails, or later if the connection disconnects. An error message is passed to the failure callback.  If a device has multiple interfaces then you can connect to them by providind the inteface Ids.
+Function `connect` connects to a Bluetooth device.  The callback is long running.  Success will be called when the connection is successful.  Failure is called if the connection fails, or later if the connection disconnects. An error message is passed to the failure callback.  
+If a device has multiple interfaces then you can connect to them by providing the interface Ids.
 
 ### Parameters
 

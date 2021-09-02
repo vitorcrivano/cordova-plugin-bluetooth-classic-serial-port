@@ -1,9 +1,9 @@
 {
-  "name": "cordova-plugin-bluetoothClassic-serial",
+  "name": "cordova-plugin-bluetooth-classic-serial-port",
   "version": "0.9.8",
-  "description": "Bluetooth Serial Communication Plugin",
+  "description": "Cordova Bluetooth Serial Port Profile Communication Plugin",
   "cordova": {
-    "id": "cordova-plugin-bluetoothClassic-serial",
+    "id": "cordova-plugin-bluetooth-classic-serial-port",
     "platforms": [
       "android",
       "ios"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/soltius/BluetoothClassicSerial.git"
+    "url": "git+https://github.com/MaximBelov/cordova-plugin-bluetooth-classic-serial-port.git"
   },
   "keywords": [
     "cordova",
@@ -23,7 +23,17 @@
   "author": "Soltius New Zealand <steve.campbell@soltius.co.nz>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/soltius/BluetoothClassicSerial/issues"
+    "url": "https://github.com/MaximBelov/cordova-plugin-bluetooth-classic-serial-port/issues"
   },
-  "homepage": "https://github.com/soltius/BluetoothClassicSerial#readme"
+  "homepage": "https://github.com/MaximBelov/cordova-plugin-bluetooth-classic-serial-port#readme",
+  "contributors": [
+    {
+      "name": "Maxim Belov",
+      "email": "belov1988@gmail.com"
+    },
+    {
+      "name": "Kogulan Naskaran",
+      "email": "kogulan.baskaran@gmail.com"
+    }
+  ]
 }
