@@ -514,7 +514,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
     private void isEnabled(CallbackContext callbackContext){
         if (bluetoothAdapter.isEnabled()) {
-            callbackContext.success();
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
         } else {
             callbackContext.error("Bluetooth is disabled.");
         }
