@@ -14,11 +14,15 @@ import android.os.Message;
 import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
+import android.os.Build;
+
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.LOG;
+import org.apache.cordova.PermissionHelper;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * PhoneGap Plugin for Serial Communication over Bluetooth
@@ -89,6 +95,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
     // Android 23 requires user to explicitly grant permission for location to discover unpaired
     private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final String ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final int CHECK_PERMISSIONS_REQ_CODE = 2;
     private CallbackContext permissionCallback;
 
@@ -264,13 +271,32 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
             } else if (action.equals(DISCOVER_UNPAIRED)) {
 
-              //Check for Coarse Location
-              if (cordova.hasPermission(ACCESS_COARSE_LOCATION)) {
-                discoverUnpairedDevices(callbackContext);
-              } else {
-                permissionCallback = callbackContext;
-                cordova.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
-              }
+                if (Build.VERSION.SDK_INT >= 29) {                                  // (API 29) Build.VERSION_CODES.Q
+                    if (!PermissionHelper.hasPermission(this, ACCESS_FINE_LOCATION)) {
+                        permissionCallback = callbackContext;
+
+                        List<String> permissionsList = new ArrayList<String>();
+                        permissionsList.add(ACCESS_FINE_LOCATION);
+                        String accessBackgroundLocation = this.preferences.getString("accessBackgroundLocation", "false");
+                        if(accessBackgroundLocation == "true") {
+                            LOG.w(TAG, "ACCESS_BACKGROUND_LOCATION is being requested");
+                            permissionsList.add("android.permission.ACCESS_BACKGROUND_LOCATION"); // (API 29) Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        }
+                        String[] permissionsArray = new String[permissionsList.size()];
+                        PermissionHelper.requestPermissions(this, CHECK_PERMISSIONS_REQ_CODE, permissionsList.toArray(permissionsArray));
+                    } else {
+                        discoverUnpairedDevices(callbackContext);
+                    }
+                } else {
+                    if(!PermissionHelper.hasPermission(this, ACCESS_COARSE_LOCATION)) {
+                        // save info so we can call this method again after permissions are granted
+                        permissionCallback = callbackContext;
+                        PermissionHelper.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
+                    } else {
+                        discoverUnpairedDevices(callbackContext);
+                    }
+                }
+
 
             } else if (action.equals(SET_DEVICE_DISCOVERED_LISTENER)) {
 

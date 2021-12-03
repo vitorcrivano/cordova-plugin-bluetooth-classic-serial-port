@@ -1,3 +1,6 @@
+= 0.9.9 =
+Add new location permissions >= Android 10 ( API29)
+
 = 0.9.8 =
 Fix iOS issue with raw subscribe return II
 
