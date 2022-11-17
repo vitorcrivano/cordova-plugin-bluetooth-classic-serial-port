@@ -12,7 +12,6 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
-import android.util.Base64;
 import android.util.Log;
 import android.os.Build;
 
@@ -39,6 +38,13 @@ import java.util.ArrayList;
  * PhoneGap Plugin for Serial Communication over Bluetooth
  */
 public class BluetoothClassicSerial extends CordovaPlugin {
+
+    // permissions
+    private static final String ACCESS_BACKGROUND_LOCATION = "android.permission.ACCESS_BACKGROUND_LOCATION"; // API 29
+    private static final String BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"; // API 31
+    private static final String BLUETOOTH_SCAN = "android.permission.BLUETOOTH_SCAN"; // API 31
+    private static final String ACCESS_FINE_LOCATION = "android.permission.ACCESS_FINE_LOCATION"; // API 30
+    private static final String ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION"; // API 29
 
     // actions
     private static final String LIST = "list";
@@ -91,16 +97,24 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
     //StringBuffer buffer = new StringBuffer();
     //private String delimiter;
-    private static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
-    // Android 23 requires user to explicitly grant permission for location to discover unpaired
-    private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-    private static final String ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
-    private static final int CHECK_PERMISSIONS_REQ_CODE = 2;
+    private static final int REQUEST_ENABLE_BLUETOOTH = 1;
+    private static final int REQUEST_LIST_BONDED_DEVICES = 2;
+    private static final int REQUEST_LIST_UNPAIRED_DEVICES = 3;
     private CallbackContext permissionCallback;
 
     //Container for interfaces (Index = interfaceID)
-    private HashMap<String, InterfaceContext> connections = new HashMap<String, InterfaceContext>();
+    private final HashMap<String, InterfaceContext> connections = new HashMap<String, InterfaceContext>();
+
+    private static int COMPILE_SDK_VERSION = -1;
+
+    @Override
+    protected void pluginInitialize() {
+        if (COMPILE_SDK_VERSION == -1) {
+            Context context = cordova.getContext();
+            COMPILE_SDK_VERSION = context.getApplicationContext().getApplicationInfo().targetSdkVersion;
+        }
+    }
 
     @Override
     public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
@@ -271,32 +285,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
             } else if (action.equals(DISCOVER_UNPAIRED)) {
 
-                if (Build.VERSION.SDK_INT >= 29) {                                  // (API 29) Build.VERSION_CODES.Q
-                    if (!PermissionHelper.hasPermission(this, ACCESS_FINE_LOCATION)) {
-                        permissionCallback = callbackContext;
-
-                        List<String> permissionsList = new ArrayList<String>();
-                        permissionsList.add(ACCESS_FINE_LOCATION);
-                        String accessBackgroundLocation = this.preferences.getString("accessBackgroundLocation", "false");
-                        if(accessBackgroundLocation == "true") {
-                            LOG.w(TAG, "ACCESS_BACKGROUND_LOCATION is being requested");
-                            permissionsList.add("android.permission.ACCESS_BACKGROUND_LOCATION"); // (API 29) Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                        }
-                        String[] permissionsArray = new String[permissionsList.size()];
-                        PermissionHelper.requestPermissions(this, CHECK_PERMISSIONS_REQ_CODE, permissionsList.toArray(permissionsArray));
-                    } else {
-                        discoverUnpairedDevices(callbackContext);
-                    }
-                } else {
-                    if(!PermissionHelper.hasPermission(this, ACCESS_COARSE_LOCATION)) {
-                        // save info so we can call this method again after permissions are granted
-                        permissionCallback = callbackContext;
-                        PermissionHelper.requestPermission(this, CHECK_PERMISSIONS_REQ_CODE, ACCESS_COARSE_LOCATION);
-                    } else {
-                        discoverUnpairedDevices(callbackContext);
-                    }
-                }
-
+                discoverUnpairedDevices(callbackContext);
 
             } else if (action.equals(SET_DEVICE_DISCOVERED_LISTENER)) {
 
@@ -347,6 +336,82 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 //        }
     }
 
+    // https://github.com/don/cordova-plugin-ble-central/blob/master/src/android/BLECentralPlugin.java#L1200
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+
+        for (int i = 0; i < permissions.length; i++) {
+
+            if (permissions[i].equals(ACCESS_FINE_LOCATION) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                LOG.d(TAG, "User *rejected* Fine Location Access");
+                this.permissionCallback.error("Location permission not granted.");
+                return;
+            } else if (permissions[i].equals(ACCESS_COARSE_LOCATION) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                LOG.d(TAG, "User *rejected* Coarse Location Access");
+                this.permissionCallback.error("Location permission not granted.");
+                return;
+            } else if (permissions[i].equals(BLUETOOTH_SCAN) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                LOG.d(TAG, "User *rejected* Bluetooth_Scan Access");
+                this.permissionCallback.error("Bluetooth scan permission not granted.");
+                return;
+            } else if (permissions[i].equals(BLUETOOTH_CONNECT) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                LOG.d(TAG, "User *rejected* Bluetooth_Connect Access");
+                this.permissionCallback.error("Bluetooth Connect permission not granted.");
+                return;
+            }
+        }
+
+
+        switch (requestCode) {
+            case REQUEST_LIST_BONDED_DEVICES:
+                LOG.d(TAG, "User granted permission");
+                listBondedDevices(permissionCallback);
+                this.permissionCallback = null;
+                break;
+            case REQUEST_LIST_UNPAIRED_DEVICES:
+                LOG.d(TAG, "User granted permission");
+                discoverUnpairedDevices(permissionCallback);
+                this.permissionCallback = null;
+                break;
+        }
+
+    }
+
+    // https://github.com/don/cordova-plugin-ble-central/blob/master/src/android/BLECentralPlugin.java#L1062
+    private List<String> getMissingPermissions() {
+        //Android 12 (API 31) and higher
+        // Users MUST accept BLUETOOTH_SCAN and BLUETOOTH_CONNECT
+        // Android 10 (API 29) up to Android 11 (API 30)
+        // Users MUST accept ACCESS_FINE_LOCATION
+        // Users may accept or reject ACCESS_BACKGROUND_LOCATION
+        // Android 9 (API 28) and lower
+        // Users MUST accept ACCESS_COARSE_LOCATION
+        List<String> missingPermissions = new ArrayList<String>();
+        if (COMPILE_SDK_VERSION >= 31 && Build.VERSION.SDK_INT >= 31) { // (API 31) Build.VERSION_CODE.S
+            if (!PermissionHelper.hasPermission(this, BLUETOOTH_SCAN)) {
+                missingPermissions.add(BLUETOOTH_SCAN);
+            }
+            if (!PermissionHelper.hasPermission(this, BLUETOOTH_CONNECT)) {
+                missingPermissions.add(BLUETOOTH_CONNECT);
+            }
+        } else if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29) { // (API 29) Build.VERSION_CODES.Q
+            if (!PermissionHelper.hasPermission(this, ACCESS_FINE_LOCATION)) {
+                missingPermissions.add(ACCESS_FINE_LOCATION);
+            }
+
+            String accessBackgroundLocation = this.preferences.getString("accessBackgroundLocation", "false");
+            if (accessBackgroundLocation == "true" && !PermissionHelper.hasPermission(this, ACCESS_BACKGROUND_LOCATION)) {
+                LOG.w(TAG, "ACCESS_BACKGROUND_LOCATION is being requested");
+                missingPermissions.add(ACCESS_BACKGROUND_LOCATION);
+            }
+        } else {
+            if (!PermissionHelper.hasPermission(this, ACCESS_COARSE_LOCATION)) {
+                missingPermissions.add(ACCESS_COARSE_LOCATION);
+            }
+        }
+        return missingPermissions;
+    }
+
     // Object to Hold Connected Interfaces
     private class InterfaceContext {
 
@@ -376,82 +441,82 @@ public class BluetoothClassicSerial extends CordovaPlugin {
                     String stringData;
 
                     switch (msg.what) {
-                    case MESSAGE_READ:
+                        case MESSAGE_READ:
 
-                        stringData =  (String)msg.obj;
+                            stringData = (String) msg.obj;
 
-                        if (buffer == null) {
-                            buffer = new StringBuffer();
-                        }
+                            if (buffer == null) {
+                                buffer = new StringBuffer();
+                            }
 
-                        buffer.append(stringData);
+                            buffer.append(stringData);
 
-                        if (dataAvailableCallback != null) {
-                            sendDataToSubscriber();
-                        }
+                            if (dataAvailableCallback != null) {
+                                sendDataToSubscriber();
+                            }
 
-                        break;
+                            break;
 
-                    case MESSAGE_READ_RAW:
+                        case MESSAGE_READ_RAW:
 
-                        if (rawDataAvailableCallback != null) {
-                            byteArray = (byte[])msg.obj;
-                            sendRawDataToSubscriber(byteArray);
-                        }
+                            if (rawDataAvailableCallback != null) {
+                                byteArray = (byte[]) msg.obj;
+                                sendRawDataToSubscriber(byteArray);
+                            }
 
-                        break;
+                            break;
 
-                    case MESSAGE_STATE_CHANGE:
+                        case MESSAGE_STATE_CHANGE:
 
-                        if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
-                        switch (msg.arg1) {
-                        case BluetoothClassicSerialService.STATE_CONNECTED:
-                            Log.i(TAG, "BluetoothClassicSerialService.STATE_CONNECTED");
-                            if (mConnected == false) {
-                                mConnected = true;
-                                notifyConnectionSuccess();
+                            if (D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                            switch (msg.arg1) {
+                                case BluetoothClassicSerialService.STATE_CONNECTED:
+                                    Log.i(TAG, "BluetoothClassicSerialService.STATE_CONNECTED");
+                                    if (mConnected == false) {
+                                        mConnected = true;
+                                        notifyConnectionSuccess();
+                                    }
+                                    break;
+                                case BluetoothClassicSerialService.STATE_CONNECTING:
+                                    Log.i(TAG, "BluetoothClassicSerialService.STATE_CONNECTING");
+                                    break;
+                                case BluetoothClassicSerialService.STATE_LISTEN:
+                                    Log.i(TAG, "BluetoothClassicSerialService.STATE_LISTEN");
+                                    break;
+                                case BluetoothClassicSerialService.STATE_NONE:
+                                    Log.i(TAG, "BluetoothClassicSerialService.STATE_NONE");
+                                    break;
                             }
                             break;
-                        case BluetoothClassicSerialService.STATE_CONNECTING:
-                            Log.i(TAG, "BluetoothClassicSerialService.STATE_CONNECTING");
-                            break;
-                        case BluetoothClassicSerialService.STATE_LISTEN:
-                            Log.i(TAG, "BluetoothClassicSerialService.STATE_LISTEN");
-                            break;
-                        case BluetoothClassicSerialService.STATE_NONE:
-                            Log.i(TAG, "BluetoothClassicSerialService.STATE_NONE");
-                            break;
-                        }
-                        break;
 
-                    case MESSAGE_WRITE:
-                        //  byte[] writeBuf = (byte[]) msg.obj;
-                        //  String writeMessage = new String(writeBuf);
-                        //  Log.i(TAG, "Wrote: " + writeMessage);
-                        break;
+                        case MESSAGE_WRITE:
+                            //  byte[] writeBuf = (byte[]) msg.obj;
+                            //  String writeMessage = new String(writeBuf);
+                            //  Log.i(TAG, "Wrote: " + writeMessage);
+                            break;
 
-                    case MESSAGE_DEVICE_NAME:
-                        Log.i(TAG, msg.getData().getString(DEVICE_NAME));
-                        break;
+                        case MESSAGE_DEVICE_NAME:
+                            Log.i(TAG, msg.getData().getString(DEVICE_NAME));
+                            break;
 
-                    case MESSAGE_TOAST:
-                        String message = msg.getData().getString(TOAST);
-                        if (mConnected == true) {
-                            mConnected = false;
-                            notifyConnectionLost(message);
-                        }
-                        break;
-                    case MESSAGE_FAILED:
-                        String messageF = msg.getData().getString(TOAST);
-                        if (connectCallback != null) {
+                        case MESSAGE_TOAST:
+                            String message = msg.getData().getString(TOAST);
                             if (mConnected == true) {
                                 mConnected = false;
+                                notifyConnectionLost(message);
                             }
-                            PluginResult result = new PluginResult(PluginResult.Status.ERROR, messageF);
-                            connectCallback.error(messageF);
-                            connectCallback = null;
-                        }
-                        break;
+                            break;
+                        case MESSAGE_FAILED:
+                            String messageF = msg.getData().getString(TOAST);
+                            if (connectCallback != null) {
+                                if (mConnected == true) {
+                                    mConnected = false;
+                                }
+                                PluginResult result = new PluginResult(PluginResult.Status.ERROR, messageF);
+                                connectCallback.error(messageF);
+                                connectCallback = null;
+                            }
+                            break;
                     }
 
                 }
@@ -484,7 +549,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
             String data = null;
             int index;
 
-            index = buffer.indexOf(delimiter,0);
+            index = buffer.indexOf(delimiter, 0);
 
             if (index > -1) {
                 data = buffer.substring(0, index + delimiter.length());
@@ -494,6 +559,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
             return data;
 
         }
+
         private void sendDataToSubscriber() {
 
             String data = readUntil(delimiter);
@@ -537,8 +603,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
 
     }  //End of Interface Context Class
 
-
-    private void isEnabled(CallbackContext callbackContext){
+    private void isEnabled(CallbackContext callbackContext) {
         if (bluetoothAdapter.isEnabled()) {
             callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
         } else {
@@ -547,6 +612,14 @@ public class BluetoothClassicSerial extends CordovaPlugin {
     }
 
     private void listBondedDevices(CallbackContext callbackContext) throws JSONException {
+
+        List<String> missingPermissions = getMissingPermissions();
+        if (missingPermissions.size() > 0) {
+            permissionCallback = callbackContext;
+            PermissionHelper.requestPermissions(this, REQUEST_LIST_BONDED_DEVICES, missingPermissions.toArray(new String[0]));
+            return;
+        }
+
         JSONArray deviceList = new JSONArray();
         Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
 
@@ -557,6 +630,13 @@ public class BluetoothClassicSerial extends CordovaPlugin {
     }
 
     private void discoverUnpairedDevices(final CallbackContext callbackContext) throws JSONException {
+
+        List<String> missingPermissions = getMissingPermissions();
+        if (missingPermissions.size() > 0) {
+            permissionCallback = callbackContext;
+            PermissionHelper.requestPermissions(this, REQUEST_LIST_UNPAIRED_DEVICES, missingPermissions.toArray(new String[0]));
+            return;
+        }
 
         final CallbackContext ddc = deviceDiscoveredCallback;
 
@@ -608,7 +688,7 @@ public class BluetoothClassicSerial extends CordovaPlugin {
         String macAddress = args.getString(0);
         JSONArray uuidJSONArray = args.getJSONArray(1);
 
-        if(!bluetoothAdapter.isEnabled()){
+        if (!bluetoothAdapter.isEnabled()) {
             callbackContext.error("Bluetooth is disabled.");
             return;
         }
@@ -701,8 +781,6 @@ public class BluetoothClassicSerial extends CordovaPlugin {
         }
     }
 
-
-
     private void setContextSubscribe(String macAddress, CallbackContext cc, String delimiter) {
 
         InterfaceContext ic = null;
@@ -770,20 +848,10 @@ public class BluetoothClassicSerial extends CordovaPlugin {
         ic = connections.get(macAddress);
 
         if (ic != null && ic.bluetoothClassicSerialService != null) {
-            if(ic.bluetoothClassicSerialService.getState() == BluetoothClassicSerialService.STATE_CONNECTED){
+            if (ic.bluetoothClassicSerialService.getState() == BluetoothClassicSerialService.STATE_CONNECTED) {
                 successful = true;
             }
         }
-
-//        for(Map.Entry<String,InterfaceContext> entry: connections.entrySet()) {
-//
-//            ic = entry.getValue();
-//
-//            if (ic.bluetoothClassicSerialService.getState() != BluetoothClassicSerialService.STATE_CONNECTED) {
-//                successful = false;
-//            }
-//
-//        }
 
         if (successful) {
             callbackContext.success();
@@ -791,28 +859,5 @@ public class BluetoothClassicSerial extends CordovaPlugin {
             callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, successful));
         }
     }
-
-      @Override
-      public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
-
-        for(int result:grantResults) {
-          if(result == PackageManager.PERMISSION_DENIED) {
-            LOG.d(TAG, "User *rejected* location permission");
-            this.permissionCallback.sendPluginResult(new PluginResult(
-              PluginResult.Status.ERROR,
-              "Location permission is required to discover unpaired devices.")
-             );
-             return;
-           }
-         }
-
-          switch(requestCode) {
-            case CHECK_PERMISSIONS_REQ_CODE:
-              LOG.d(TAG, "User granted location permission");
-              discoverUnpairedDevices(permissionCallback);
-              break;
-          }
-
-        }
 
 }

@@ -1,8 +1,11 @@
+= 0.9.11 =
+Add new permissions BLUETOOTH_SCAN add BLUETOOTH_CONNECT >= Android 12 or higher
+
 = 0.9.10 =
 fix case letter file name for browser
 
 = 0.9.9 =
-Add new location permissions >= Android 10 ( API29)
+Add new location permissions >= Android 10 (API29)
 
 = 0.9.8 =
 Fix iOS issue with raw subscribe return II

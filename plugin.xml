@@ -3,7 +3,7 @@
     xmlns="http://www.phonegap.com/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-bluetooth-classic-serial-port"
-    version="0.9.10">
+    version="0.9.11">
 
     <name>Bluetooth Classic Serial</name>
     <description>Bluetooth Serial Communication Plugin</description>
@@ -15,7 +15,7 @@
     <js-module src="www/bluetoothClassicSerial.js" name="bluetoothClassicSerial">
         <clobbers target="window.bluetoothClassicSerial" />
     </js-module>
-    
+
     <platform name="android">
 
         <config-file target="res/xml/config.xml" parent="/widget">
@@ -30,10 +30,12 @@
             target-dir="src/nz/co/soltius/cordova"/>
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.BLUETOOTH" />
-            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+            <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+            <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+            <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
         </config-file>
 
     </platform>
