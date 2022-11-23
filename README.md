@@ -1,9 +1,10 @@
 # Bluetooth Classic Serial Plugin for Cordova
 
-This plugin enables serial communication over Bluetooth. It is a fork of https://github.com/don/BluetoothSerial and https://github.com/soltius/BluetoothClassicSerial The core difference is that https://github.com/don/BluetoothSerial supports Bluetooth Low Energy on iOS. This plugin is written using the iOS Accessory Framework (MFi) to support Classic Bluetooth on iOS. Windows Phone 8 Support has been removed in the fork.
+This plugin enables serial communication over Bluetooth. It is a fork of https://github.com/don/BluetoothSerial and https://github.com/soltius/BluetoothClassicSerial.
 
-* **Beta Release**
-* **Breaking API Changes from version 0.9.5 'MultiInterface'**
+The core difference is that https://github.com/don/BluetoothSerial supports Bluetooth Low Energy on iOS. 
+
+This plugin is written using the [iOS Accessory Framework](https://developer.apple.com/documentation/externalaccessory/) (MFi) to support Classic Bluetooth on iOS.
 
 ## TODO
 
@@ -13,13 +14,31 @@ This plugin enables serial communication over Bluetooth. It is a fork of https:/
 
 * Android
 * iOS (devices must be MFi certified)
-* Browser (Testing only. See [comments](https://github.com/don/BluetoothSerial/blob/master/src/browser/bluetoothSerial.js).)
+* Browser (Testing only. See [comments](https://github.com/MaximBelov/cordova-plugin-bluetooth-classic-serial-port/blob/main/src/browser/bluetoothClassicSerial.js).)
 
 ## Limitations
 
  * The phone must initiate the Bluetooth connection
  * Will *not* connect Android to Android (https://github.com/don/BluetoothSerial/issues/50#issuecomment-66405396)
  * Will *not* connect iOS to iOS
+
+# Background Scanning on iOS
+
+Android applications will continue to receive notification while the application is in the background.
+
+iOS applications need additional configuration to allow Bluetooth to run in the background.
+
+Add a new section to config.xml
+
+    <platform name="ios">
+        <config-file parent="UIBackgroundModes" target="*-Info.plist">
+            <array>
+                <string>external-accessory</string>
+            </array>
+        </config-file>
+    </platform>
+
+See [Documentation](https://developer.apple.com/documentation/bundleresources/information_property_list/uibackgroundmodes) .
 
 # Installing
 
