@@ -1,3 +1,7 @@
+= 0.9.12 =
+Android: Update permission for sdk 33
+WindowsPhone: Removed
+
 = 0.9.11 =
 Add new permissions BLUETOOTH_SCAN add BLUETOOTH_CONNECT >= Android 12 or higher
 
