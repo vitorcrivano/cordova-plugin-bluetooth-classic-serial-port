@@ -42,7 +42,7 @@
 
     <platform name="ios">
 
-        <dependency id="cordova-custom-config" />
+        <dependency id="cordova-custom-config@5" />
 
         <config-file target="config.xml" parent="/widget">
             <feature name="BluetoothClassicSerial">
