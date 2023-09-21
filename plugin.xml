@@ -56,13 +56,14 @@
         </config-file>
 
         <preference name="BLUETOOTH_ALWAYS_USAGE_DESCRIPTION" default="This app needs bluetooth access"/>
-        <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
-        <string>$BLUETOOTH_ALWAYS_USAGE_DESCRIPTION</string>
-        </config-file>
+            <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
+                <string>$BLUETOOTH_ALWAYS_USAGE_DESCRIPTION</string>
+            </config-file>
+        
         <preference name="BLUETOOTH_PERIPHERAL_USAGE_DESCRIPTION" default="This app needs bluetooth access"/>
-        <config-file target="*-Info.plist" parent="NSBluetoothPeripheralUsageDescription">
-        <string>$BLUETOOTH_PERIPHERAL_USAGE_DESCRIPTION</string>
-        </config-file>
+            <config-file target="*-Info.plist" parent="NSBluetoothPeripheralUsageDescription">
+                <string>$BLUETOOTH_PERIPHERAL_USAGE_DESCRIPTION</string>
+            </config-file>
 
         <header-file src="src/ios/BluetoothClassicSerial.h" target-dir="BluetoothClassicSerial" />
         <source-file src="src/ios/BluetoothClassicSerial.m" target-dir="BluetoothClassicSerial" />
