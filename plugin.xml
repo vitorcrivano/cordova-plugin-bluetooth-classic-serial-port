@@ -42,7 +42,6 @@
 
     <platform name="ios">
 
-        <dependency id="cordova-custom-config" url="https://github.com/dpa99c/cordova-custom-config" />
 
         <config-file target="config.xml" parent="/widget">
             <feature name="BluetoothClassicSerial">
@@ -54,6 +53,15 @@
             <array>
                 <string>br.com.corecase.coremanager</string>
              </array>
+        </config-file>
+
+        <preference name="BLUETOOTH_ALWAYS_USAGE_DESCRIPTION" default="This app needs bluetooth access"/>
+        <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
+        <string>$BLUETOOTH_ALWAYS_USAGE_DESCRIPTION</string>
+        </config-file>
+        <preference name="BLUETOOTH_PERIPHERAL_USAGE_DESCRIPTION" default="This app needs bluetooth access"/>
+        <config-file target="*-Info.plist" parent="NSBluetoothPeripheralUsageDescription">
+        <string>$BLUETOOTH_PERIPHERAL_USAGE_DESCRIPTION</string>
         </config-file>
 
         <header-file src="src/ios/BluetoothClassicSerial.h" target-dir="BluetoothClassicSerial" />
