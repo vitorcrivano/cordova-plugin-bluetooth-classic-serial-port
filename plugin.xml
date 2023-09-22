@@ -55,6 +55,15 @@
              </array>
         </config-file>
 
+        <config-file target="*-Info.plist" parent="UIBackgroundModes">
+            <array>
+                <string>bluetooth-central</string>
+                <string>external-accessory</string>
+                <string>fetch</string>
+                <string>processing</string>
+            </array>
+        </config-file>
+
         <preference name="BLUETOOTH_ALWAYS_USAGE_DESCRIPTION" default="This app needs bluetooth access"/>
             <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
                 <string>$BLUETOOTH_ALWAYS_USAGE_DESCRIPTION</string>
