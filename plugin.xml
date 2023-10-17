@@ -51,7 +51,7 @@
 
         <config-file target="*-Info.plist" parent="UISupportedExternalAccessoryProtocols">
             <array>
-                <string>br.com.corecase.coremanager</string>
+                <string>com.uk.tsl.rfid</string>
              </array>
         </config-file>
 
